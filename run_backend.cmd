@@ -1,0 +1,6 @@
+@echo off
+echo Setting up environment...
+set "JAVA_HOME=C:\Users\HP\.antigravity\extensions\redhat.java-1.50.0-win32-x64\jre\21.0.9-win32-x86_64"
+echo Starting Backend on Port 8081...
+mvn spring-boot:run
+pause
