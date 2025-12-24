@@ -1,14 +1,16 @@
+
 package com.example.LibraryManagement.model;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
+@Document(collection = "books")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "books")
-
 public class Book {
     @Id
     private String id;
@@ -16,4 +18,5 @@ public class Book {
     private String author;
     private int publicationYear;
     private String genre;
+    private int copiesAvailable; // add this field
 }
