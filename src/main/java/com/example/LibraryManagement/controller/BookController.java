@@ -1,56 +1,66 @@
 package com.example.LibraryManagement.controller;
 
 import com.example.LibraryManagement.model.Book;
-import com.example.LibraryManagement.service.BookService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.LibraryManagement.repository.BookRepository;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+@CrossOrigin(origins = "*", maxAge = 3600) // Handles CORS issues for your React frontend
 @RestController
 @RequestMapping("/api/books")
-@CrossOrigin(origins = "http://localhost:5173")
 public class BookController {
 
-    @Autowired
-    private BookService bookService;
+    private final BookRepository bookRepository;
 
-    @PostMapping
-    public Book addBook(@RequestBody Book book) {
-        return bookService.addBook(book);
+    public BookController(BookRepository bookRepository) {
+        this.bookRepository = bookRepository;
     }
 
     @GetMapping
-    public List<Book> getAllBooks() {
-        return bookService.getAllBooks();
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    public List<Book> getAll() {
+        return bookRepository.findAll();
     }
 
     @GetMapping("/{id}")
-    public Book getBookById(@PathVariable String id) {
-        return bookService.getBookById(id);
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    public ResponseEntity<Book> getById(@PathVariable String id) {
+        return bookRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public Book add(@RequestBody Book book) {
+        return bookRepository.save(book);
     }
 
     @PutMapping("/{id}")
-    public Book updateBook(@PathVariable String id, @RequestBody Book book) {
-        return bookService.updateBook(id, book);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Book> update(@PathVariable String id, @RequestBody Book book) {
+        return bookRepository.findById(id)
+                .map(existingBook -> {
+                    existingBook.setTitle(book.getTitle());
+                    existingBook.setAuthor(book.getAuthor());
+                    existingBook.setPublicationYear(book.getPublicationYear());
+                    existingBook.setGenre(book.getGenre());
+                    existingBook.setCopiesAvailable(book.getCopiesAvailable());
+                    return ResponseEntity.ok(bookRepository.save(existingBook));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-    public void deleteBook(@PathVariable String id) {
-        bookService.deleteBookById(id);
-    }
-
-    @GetMapping("/year/{year}")
-    public List<Book> getBooksByYear(@PathVariable int year) {
-        return bookService.findBooksByPublicationYear(year);
-    }
-
-    @GetMapping("/{id}/genre")
-    public String getGenreByBookId(@PathVariable String id) {
-        return bookService.getGenreByBookId(id);
-    }
-
-    @DeleteMapping("/year/{year}")
-    public void deleteBooksByYear(@PathVariable int year) {
-        bookService.deleteBooksByPublicationYear(year);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> delete(@PathVariable String id) {
+        if (!bookRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        bookRepository.deleteById(id);
+        return ResponseEntity.ok("Book deleted successfully");
     }
 }
